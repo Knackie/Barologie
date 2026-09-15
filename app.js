@@ -177,7 +177,7 @@ function renderCarte() {
         <h3>${escapeHtml(cocktail.nom)}</h3>
         <div><strong>Ingrédients :</strong> ${formatIngredientListWithMl(cocktail)}</div>
         <div class="stock-note">🍹 Quantité possible : ${count}</div>
-        <div class="avis">💬 Avis de la chef : ${escapeHtml(cocktail.avisChloe)}</div>
+        <div class="avis">💬 Avis de la Cheffe : ${escapeHtml(cocktail.avisChloe)}</div>
       </article>
     `;
     })
