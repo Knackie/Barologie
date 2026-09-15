@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Barologie - Carte Cocktails</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <h1>🍸 Barologie</h1>
+    <p>Les cocktails disponibles ce soir</p>
+  </header>
+
+  <nav class="tabs">
+    <button id="btnCarte" class="active">Vue carte</button>
+    <button id="btnPhotos">Vue photos</button>
+    <button id="btnAdmin">Vue admin</button>
+  </nav>
+
+  <main>
+    <section id="vueCarte">
+      <h2>Carte</h2>
+      <div id="cocktailList" class="cards"></div>
+    </section>
+
+    <section id="vuePhotos" class="hidden">
+      <h2>Galerie cocktails</h2>
+      <div id="photoList" class="photo-grid"></div>
+    </section>
+
+    <section id="vueAdmin" class="hidden">
+      <h2>Gestion du stock</h2>
+      <p>Renseigne la quantité disponible par ingrédient (mettre 0 = rupture).</p>
+      <div id="stockList" class="stock"></div>
+      <button id="resetStock" class="secondary">Réinitialiser le stock</button>
+
+      <h2>Ajouter une recette</h2>
+      <form id="addCocktailForm" class="form-card">
+        <label for="cocktailName">Nom du cocktail</label>
+        <input id="cocktailName" type="text" required maxlength="80" placeholder="Ex: Gin Tonic" />
+
+        <label>Ingrédients (choisir dans la liste)</label>
+        <div id="ingredientOptions" class="ingredient-options"></div>
+
+        <label for="newIngredientInput">Ajouter un nouvel ingrédient à la liste</label>
+        <div class="inline-row">
+          <input id="newIngredientInput" type="text" maxlength="60" placeholder="Ex: Jus de cranberry" />
+          <button id="addIngredientBtn" type="button" class="secondary">Ajouter ingrédient</button>
+        </div>
+
+        <label for="cocktailAvis">Avis de Chloé</label>
+        <input id="cocktailAvis" type="text" maxlength="180" placeholder="Ex: Super frais" />
+
+        <label for="cocktailPhotoUrl">URL photo</label>
+        <input id="cocktailPhotoUrl" type="url" placeholder="https://..." />
+
+        <button type="submit" id="saveCocktailBtn">Ajouter le cocktail</button>
+        <button type="button" id="cancelEditBtn" class="secondary hidden">Annuler la modification</button>
+        <div id="adminMessage" class="form-message hidden"></div>
+      </form>
+
+      <h2>Recettes enregistrées</h2>
+      <div id="adminCocktailList" class="cards"></div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
