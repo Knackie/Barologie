@@ -36,6 +36,12 @@ const defaultCocktails = [
 const fallbackPhotoUrl = "https://images.unsplash.com/photo-1470337458703-46ad1756a187?auto=format&fit=crop&w=900&q=80";
 const defaultIngredientMl = 50;
 const defaultStockMl = 1000;
+const githubConfig = {
+  owner: "Knackie",
+  repo: "Barologie",
+  branch: "main",
+  path: "data.json"
+};
 
 let cocktails = [...defaultCocktails];
 let ingredientCatalog = [];
@@ -437,19 +443,15 @@ function applySnapshot(data) {
 }
 
 function readGithubForm() {
-  const owner = document.getElementById("ghOwner").value.trim();
-  const repo = document.getElementById("ghRepo").value.trim();
-  const branch = document.getElementById("ghBranch").value.trim() || "main";
-  const path = document.getElementById("ghPath").value.trim() || "data.json";
   const token = document.getElementById("ghToken").value.trim();
 
-  return { owner, repo, branch, path, token };
+  return { ...githubConfig, token };
 }
 
 function requireGithubConfig() {
   const config = readGithubForm();
-  if (!config.owner || !config.repo || !config.path || !config.token) {
-    showAdminMessage("Renseigne owner/repo/path/token GitHub pour modifier les données.", true);
+  if (!config.token) {
+    showAdminMessage("Renseigne le token GitHub pour modifier les données.", true);
     return null;
   }
 
