@@ -130,11 +130,16 @@ function getPossibleCocktailCount(cocktail) {
     return Math.floor(availableMl / neededMl);
   });
 
-  if (portions.length = 0) {
+  if (portions.length === 0) {
     return 0;
   }
 
-  return Math.max(0, Math.min(...portions));
+  const minPortion = Math.min(...portions);
+  if (!Number.isFinite(minPortion)) {
+    return 0;
+  }
+
+  return Math.max(0, minPortion);
 }
 
 function formatIngredientListWithMl(cocktail) {
@@ -230,9 +235,10 @@ function renderStock() {
           value="${stock[ingredient] ?? defaultStockMl}"
           data-ingredient-index="${index}" />
         <span class="unit">mL</span>
+        <button type="button" class="small danger" data-action="delete-ingredient" data-ingredient-index="${index}">Supprimer</button>
       </div>
     `)
-    .join("");
+    .join("")
 
   stockContainer.querySelectorAll("input.stock-qty").forEach(input => {
     input.addEventListener("change", async e => {
@@ -244,6 +250,49 @@ function renderStock() {
       await mutateAndSync(() => {
         stock[ingredient] = quantity;
       }, "Stock mis à jour ✅");
+    });
+  });
+
+  stockContainer.querySelectorAll("button[data-action='delete-ingredient']").forEach(button => {
+    button.addEventListener("click", async e => {
+      const ingredientIndex = Number(e.target.dataset.ingredientIndex);
+      const ingredient = ingredients[ingredientIndex];
+      if (!ingredient) {
+        return;
+      }
+
+      const impactedCocktails = cocktails.filter(c => c.ingredients.includes(ingredient));
+      const impactedCount = impactedCocktails.length;
+      const confirmMessage = impactedCount > 0
+        ? `Supprimer « ${ingredient} » ? Il sera retiré de ${impactedCount} recette(s).`
+        : `Supprimer « ${ingredient} » ?`;
+
+      if (!window.confirm(confirmMessage)) {
+        return;
+      }
+
+      await mutateAndSync(() => {
+        ingredientCatalog = ingredientCatalog.filter(i => normalizeIngredientName(i) !== normalizeIngredientName(ingredient));
+        delete stock[ingredient];
+
+        cocktails = cocktails
+          .map(cocktail => {
+            const nextIngredients = cocktail.ingredients.filter(i => normalizeIngredientName(i) !== normalizeIngredientName(ingredient));
+            const nextQuantities = { ...(cocktail.ingredientQuantities ?? {}) };
+            Object.keys(nextQuantities).forEach(key => {
+              if (normalizeIngredientName(key) === normalizeIngredientName(ingredient)) {
+                delete nextQuantities[key];
+              }
+            });
+
+            return {
+              ...cocktail,
+              ingredients: nextIngredients,
+              ingredientQuantities: nextQuantities
+            };
+          })
+          .filter(cocktail => cocktail.ingredients.length > 0);
+      }, "Ingrédient supprimé ✅");
     });
   });
 }

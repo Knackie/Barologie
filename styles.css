@@ -141,6 +141,7 @@ button.secondary {
   align-items: center;
   justify-content: space-between;
   gap: .5rem;
+  flex-wrap: wrap;
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: .7rem;

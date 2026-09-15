@@ -3,11 +3,7 @@
     {
       "id": "spritz-pomme",
       "nom": "Spritz Pomme",
-      "ingredients": [
-        "Prosecco",
-        "Eau pétillante",
-        "Jus de pomme"
-      ],
+      "ingredients": ["Prosecco", "Eau pétillante", "Jus de pomme"],
       "ingredientQuantities": {
         "Prosecco": 120,
         "Eau pétillante": 60,
@@ -19,11 +15,7 @@
     {
       "id": "mule",
       "nom": "Moscow Mule",
-      "ingredients": [
-        "Vodka",
-        "Ginger beer",
-        "Citron vert"
-      ],
+      "ingredients": ["Vodka", "Ginger beer", "Citron vert"],
       "ingredientQuantities": {
         "Vodka": 60,
         "Ginger beer": 120,
@@ -35,11 +27,7 @@
     {
       "id": "virgin-sunset",
       "nom": "Virgin Sunset",
-      "ingredients": [
-        "Jus d'orange",
-        "Sirop de grenadine",
-        "Jus de pomme"
-      ],
+      "ingredients": ["Jus d'orange", "Sirop de grenadine", "Jus de pomme"],
       "ingredientQuantities": {
         "Jus d'orange": 120,
         "Sirop de grenadine": 20,
@@ -51,12 +39,7 @@
     {
       "id": "mojito",
       "nom": "Mojito",
-      "ingredients": [
-        "Rhum",
-        "Menthe",
-        "Citron vert",
-        "Eau pétillante"
-      ],
+      "ingredients": ["Rhum", "Menthe", "Citron vert", "Eau pétillante"],
       "ingredientQuantities": {
         "Rhum": 50,
         "Menthe": 10,
@@ -65,18 +48,6 @@
       },
       "avisChloe": "Un classique qui marche toujours.",
       "photoUrl": "https://images.unsplash.com/photo-1551538827-9c037cb4f32a?auto=format&fit=crop&w=900&q=80"
-    },
-    {
-      "id": "rfzaraz-mu2oq474",
-      "nom": "rfzaraz",
-      "ingredients": [
-        "Vodka"
-      ],
-      "ingredientQuantities": {
-        "Vodka": 50
-      },
-      "avisChloe": "Nouveau cocktail à tester.",
-      "photoUrl": "https://images.unsplash.com/photo-1470337458703-46ad1756a187?auto=format&fit=crop&w=900&q=80"
     }
   ],
   "ingredientCatalog": [
