@@ -142,6 +142,15 @@ function getPossibleCocktailCount(cocktail) {
   return Math.max(0, minPortion);
 }
 
+function sanitizeCount(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number) || number < 0) {
+    return 0;
+  }
+
+  return Math.floor(number);
+}
+
 function formatIngredientListWithMl(cocktail) {
   const requirements = getCocktailRequirements(cocktail);
   return cocktail.ingredients.map(ingredient => `${escapeHtml(ingredient)} (${requirements[ingredient]} mL)`).join(", ");
@@ -162,7 +171,7 @@ function renderCarte() {
 
   container.innerHTML = available
     .map(cocktail => {
-      const count = getPossibleCocktailCount(cocktail);
+      const count = sanitizeCount(getPossibleCocktailCount(cocktail));
       return `
       <article class="card">
         <h3>${escapeHtml(cocktail.nom)}</h3>
@@ -186,7 +195,7 @@ function renderPhotos() {
 
   container.innerHTML = available
     .map(cocktail => {
-      const count = getPossibleCocktailCount(cocktail);
+      const count = sanitizeCount(getPossibleCocktailCount(cocktail));
       return `
       <article class="photo-card">
         <img src="${escapeHtml(cocktail.photoUrl || fallbackPhotoUrl)}" alt="${escapeHtml(cocktail.nom)}" loading="lazy" />
@@ -202,7 +211,7 @@ function renderAdminCocktails() {
 
   container.innerHTML = cocktails
     .map(cocktail => {
-      const count = getPossibleCocktailCount(cocktail);
+      const count = sanitizeCount(getPossibleCocktailCount(cocktail));
       return `
       <article class="card">
         <h3>${escapeHtml(cocktail.nom)}</h3>
