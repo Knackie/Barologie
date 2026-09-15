@@ -1,0 +1,77 @@
+{
+  "cocktails": [
+    {
+      "id": "spritz-pomme",
+      "nom": "Spritz Pomme",
+      "ingredients": ["Prosecco", "Eau pétillante", "Jus de pomme"],
+      "ingredientQuantities": {
+        "Prosecco": 120,
+        "Eau pétillante": 60,
+        "Jus de pomme": 80
+      },
+      "avisChloe": "Frais, léger, parfait à l'apéro.",
+      "photoUrl": "https://images.unsplash.com/photo-1546171753-97d7676e4602?auto=format&fit=crop&w=900&q=80"
+    },
+    {
+      "id": "mule",
+      "nom": "Moscow Mule",
+      "ingredients": ["Vodka", "Ginger beer", "Citron vert"],
+      "ingredientQuantities": {
+        "Vodka": 60,
+        "Ginger beer": 120,
+        "Citron vert": 30
+      },
+      "avisChloe": "Piquant comme il faut, très désaltérant.",
+      "photoUrl": "https://images.unsplash.com/photo-1514361892635-6d67377fca5b?auto=format&fit=crop&w=900&q=80"
+    },
+    {
+      "id": "virgin-sunset",
+      "nom": "Virgin Sunset",
+      "ingredients": ["Jus d'orange", "Sirop de grenadine", "Jus de pomme"],
+      "ingredientQuantities": {
+        "Jus d'orange": 120,
+        "Sirop de grenadine": 20,
+        "Jus de pomme": 80
+      },
+      "avisChloe": "Sans alcool mais plein de goût.",
+      "photoUrl": "https://images.unsplash.com/photo-1497534446932-c925b458314e?auto=format&fit=crop&w=900&q=80"
+    },
+    {
+      "id": "mojito",
+      "nom": "Mojito",
+      "ingredients": ["Rhum", "Menthe", "Citron vert", "Eau pétillante"],
+      "ingredientQuantities": {
+        "Rhum": 50,
+        "Menthe": 10,
+        "Citron vert": 30,
+        "Eau pétillante": 100
+      },
+      "avisChloe": "Un classique qui marche toujours.",
+      "photoUrl": "https://images.unsplash.com/photo-1551538827-9c037cb4f32a?auto=format&fit=crop&w=900&q=80"
+    }
+  ],
+  "ingredientCatalog": [
+    "Citron vert",
+    "Eau pétillante",
+    "Ginger beer",
+    "Jus d'orange",
+    "Jus de pomme",
+    "Menthe",
+    "Prosecco",
+    "Rhum",
+    "Sirop de grenadine",
+    "Vodka"
+  ],
+  "stock": {
+    "Citron vert": 1000,
+    "Eau pétillante": 1000,
+    "Ginger beer": 1000,
+    "Jus d'orange": 1000,
+    "Jus de pomme": 1000,
+    "Menthe": 1000,
+    "Prosecco": 1000,
+    "Rhum": 1000,
+    "Sirop de grenadine": 1000,
+    "Vodka": 1000
+  }
+}

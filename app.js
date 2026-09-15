@@ -36,6 +36,7 @@ const defaultCocktails = [
 const cocktailsKey = "barologie-cocktails";
 const ingredientCatalogKey = "barologie-ingredient-catalog";
 const stockKey = "barologie-stock";
+const githubSettingsKey = "barologie-github-settings";
 const fallbackPhotoUrl = "https://images.unsplash.com/photo-1470337458703-46ad1756a187?auto=format&fit=crop&w=900&q=80";
 const defaultIngredientMl = 50;
 const defaultStockMl = 1000;
@@ -441,6 +442,180 @@ function beginEditCocktail(cocktailId) {
   showAdminMessage(`Modification : ${cocktail.nom}`);
 }
 
+function getSnapshot() {
+  return {
+    cocktails,
+    ingredientCatalog,
+    stock
+  };
+}
+
+function applySnapshot(data) {
+  if (!data || !Array.isArray(data.cocktails) || !Array.isArray(data.ingredientCatalog) || typeof data.stock !== "object" || data.stock === null) {
+    throw new Error("JSON invalide");
+  }
+
+  cocktails = data.cocktails;
+  ingredientCatalog = deduplicateIngredients(data.ingredientCatalog);
+  stock = data.stock;
+
+  saveCocktails();
+  saveIngredientCatalog();
+  ensureStockCoverage();
+  resetCocktailForm();
+  renderStock();
+  renderIngredientOptions();
+  renderCarte();
+  renderPhotos();
+  renderAdminCocktails();
+}
+
+function loadGithubSettings() {
+  const saved = localStorage.getItem(githubSettingsKey);
+  if (!saved) {
+    return { owner: "", repo: "", branch: "main", path: "docs/data.json" };
+  }
+
+  try {
+    const parsed = JSON.parse(saved);
+    return {
+      owner: parsed.owner ?? "",
+      repo: parsed.repo ?? "",
+      branch: parsed.branch ?? "main",
+      path: parsed.path ?? "docs/data.json"
+    };
+  } catch {
+    return { owner: "", repo: "", branch: "main", path: "docs/data.json" };
+  }
+}
+
+function saveGithubSettings(settings) {
+  localStorage.setItem(githubSettingsKey, JSON.stringify(settings));
+}
+
+function readGithubForm() {
+  const owner = document.getElementById("ghOwner").value.trim();
+  const repo = document.getElementById("ghRepo").value.trim();
+  const branch = document.getElementById("ghBranch").value.trim() || "main";
+  const path = document.getElementById("ghPath").value.trim() || "docs/data.json";
+  const token = document.getElementById("ghToken").value.trim();
+
+  return { owner, repo, branch, path, token };
+}
+
+function encodeBase64Utf8(text) {
+  const bytes = new TextEncoder().encode(text);
+  let binary = "";
+  bytes.forEach(byte => {
+    binary += String.fromCharCode(byte);
+  });
+  return btoa(binary);
+}
+
+function decodeBase64Utf8(base64) {
+  const normalized = base64.replace(/\n/g, "");
+  const binary = atob(normalized);
+  const bytes = Uint8Array.from(binary, c => c.charCodeAt(0));
+  return new TextDecoder().decode(bytes);
+}
+
+function getContentsApiPath(owner, repo, path) {
+  const encodedPath = encodeURIComponent(path).replace(/%2F/g, "/");
+  return `/repos/${owner}/${repo}/contents/${encodedPath}`;
+}
+
+async function loadFromGithub() {
+  const { owner, repo, branch, path, token } = readGithubForm();
+
+  if (!owner || !repo || !path || !token) {
+    showAdminMessage("Owner, repo, path et token obligatoires.", true);
+    return;
+  }
+
+  saveGithubSettings({ owner, repo, branch, path });
+
+  const response = await fetch(`https://api.github.com${getContentsApiPath(owner, repo, path)}?ref=${encodeURIComponent(branch)}`, {
+    headers: {
+      Accept: "application/vnd.github+json",
+      Authorization: `Bearer ${token}`,
+      "X-GitHub-Api-Version": "2022-11-28"
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error(`GitHub ${response.status}`);
+  }
+
+  const file = await response.json();
+  const text = decodeBase64Utf8(file.content);
+  const data = JSON.parse(text);
+  applySnapshot(data);
+  showAdminMessage("Données chargées depuis GitHub ✅");
+}
+
+async function saveToGithub() {
+  const { owner, repo, branch, path, token } = readGithubForm();
+
+  if (!owner || !repo || !path || !token) {
+    showAdminMessage("Owner, repo, path et token obligatoires.", true);
+    return;
+  }
+
+  saveGithubSettings({ owner, repo, branch, path });
+
+  const apiPath = getContentsApiPath(owner, repo, path);
+  let sha;
+
+  const currentResponse = await fetch(`https://api.github.com${apiPath}?ref=${encodeURIComponent(branch)}`, {
+    headers: {
+      Accept: "application/vnd.github+json",
+      Authorization: `Bearer ${token}`,
+      "X-GitHub-Api-Version": "2022-11-28"
+    }
+  });
+
+  if (currentResponse.ok) {
+    const current = await currentResponse.json();
+    sha = current.sha;
+  } else if (currentResponse.status !== 404) {
+    throw new Error(`GitHub ${currentResponse.status}`);
+  }
+
+  const body = {
+    message: "Update cocktail data",
+    content: encodeBase64Utf8(JSON.stringify(getSnapshot(), null, 2)),
+    branch
+  };
+
+  if (sha) {
+    body.sha = sha;
+  }
+
+  const saveResponse = await fetch(`https://api.github.com${apiPath}`, {
+    method: "PUT",
+    headers: {
+      Accept: "application/vnd.github+json",
+      Authorization: `Bearer ${token}`,
+      "X-GitHub-Api-Version": "2022-11-28"
+    },
+    body: JSON.stringify(body)
+  });
+
+  if (!saveResponse.ok) {
+    throw new Error(`GitHub ${saveResponse.status}`);
+  }
+
+  showAdminMessage("Données enregistrées sur GitHub ✅");
+}
+
+function initGithubForm() {
+  const settings = loadGithubSettings();
+  document.getElementById("ghOwner").value = settings.owner;
+  document.getElementById("ghRepo").value = settings.repo;
+  document.getElementById("ghBranch").value = settings.branch;
+  document.getElementById("ghPath").value = settings.path;
+}
+
 document.getElementById("btnCarte").addEventListener("click", () => showView("carte"));
 document.getElementById("btnPhotos").addEventListener("click", () => showView("photos"));
 document.getElementById("btnAdmin").addEventListener("click", () => showView("admin"));
@@ -582,7 +757,24 @@ document.getElementById("addCocktailForm").addEventListener("submit", e => {
   showAdminMessage(isEditMode ? "Recette modifiée ✅" : "Cocktail ajouté ✅");
 });
 
+document.getElementById("loadFromGithubBtn").addEventListener("click", async () => {
+  try {
+    await loadFromGithub();
+  } catch (error) {
+    showAdminMessage(`Erreur chargement GitHub: ${error.message}`, true);
+  }
+});
+
+document.getElementById("saveToGithubBtn").addEventListener("click", async () => {
+  try {
+    await saveToGithub();
+  } catch (error) {
+    showAdminMessage(`Erreur enregistrement GitHub: ${error.message}`, true);
+  }
+});
+
 ensureStockCoverage();
+initGithubForm();
 renderStock();
 renderIngredientOptions();
 renderCarte();
