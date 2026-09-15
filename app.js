@@ -33,31 +33,15 @@ const defaultCocktails = [
   }
 ];
 
-const cocktailsKey = "barologie-cocktails";
-const ingredientCatalogKey = "barologie-ingredient-catalog";
-const stockKey = "barologie-stock";
-const githubSettingsKey = "barologie-github-settings";
 const fallbackPhotoUrl = "https://images.unsplash.com/photo-1470337458703-46ad1756a187?auto=format&fit=crop&w=900&q=80";
 const defaultIngredientMl = 50;
 const defaultStockMl = 1000;
 
-function loadCocktails() {
-  const saved = localStorage.getItem(cocktailsKey);
-
-  if (!saved) {
-    return [...defaultCocktails];
-  }
-
-  try {
-    const parsed = JSON.parse(saved);
-    if (Array.isArray(parsed)) {
-      return parsed;
-    }
-  } catch {
-  }
-
-  return [...defaultCocktails];
-}
+let cocktails = [...defaultCocktails];
+let ingredientCatalog = [];
+let stock = {};
+let currentIngredientOptions = [];
+let editingCocktailId = null;
 
 function normalizeIngredientName(value) {
   return value
@@ -72,7 +56,7 @@ function deduplicateIngredients(ingredients) {
   const seen = new Set();
 
   ingredients.forEach(ingredient => {
-    const cleaned = ingredient.trim();
+    const cleaned = String(ingredient ?? "").trim();
     if (!cleaned) {
       return;
     }
@@ -103,39 +87,17 @@ function toPositiveNumber(value, fallback) {
   return Number.isFinite(number) && number > 0 ? number : fallback;
 }
 
-let cocktails = loadCocktails();
-
-function saveCocktails() {
-  localStorage.setItem(cocktailsKey, JSON.stringify(cocktails));
+function slugify(value) {
+  return value
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 }
 
 function getAllIngredientsFromCocktails() {
   return deduplicateIngredients(cocktails.flatMap(c => c.ingredients));
-}
-
-function loadIngredientCatalog() {
-  const defaults = getAllIngredientsFromCocktails();
-  const saved = localStorage.getItem(ingredientCatalogKey);
-
-  if (!saved) {
-    return defaults;
-  }
-
-  try {
-    const parsed = JSON.parse(saved);
-    if (Array.isArray(parsed)) {
-      return deduplicateIngredients([...defaults, ...parsed]);
-    }
-  } catch {
-  }
-
-  return defaults;
-}
-
-let ingredientCatalog = loadIngredientCatalog();
-
-function saveIngredientCatalog() {
-  localStorage.setItem(ingredientCatalogKey, JSON.stringify(ingredientCatalog));
 }
 
 function getAllIngredients() {
@@ -146,42 +108,6 @@ function buildDefaultStock() {
   return Object.fromEntries(getAllIngredients().map(i => [i, defaultStockMl]));
 }
 
-function loadStock() {
-  const defaults = buildDefaultStock();
-  const saved = localStorage.getItem(stockKey);
-
-  if (!saved) {
-    return defaults;
-  }
-
-  try {
-    const parsed = JSON.parse(saved);
-    const normalizedStock = {};
-
-    Object.entries({ ...defaults, ...parsed }).forEach(([ingredient, quantity]) => {
-      if (typeof quantity === "boolean") {
-        normalizedStock[ingredient] = quantity ? defaultStockMl : 0;
-        return;
-      }
-
-      const number = Number(quantity);
-      normalizedStock[ingredient] = Number.isFinite(number) && number >= 0 ? number : defaults[ingredient] ?? defaultStockMl;
-    });
-
-    return normalizedStock;
-  } catch {
-    return defaults;
-  }
-}
-
-let stock = loadStock();
-let currentIngredientOptions = [];
-let editingCocktailId = null;
-
-function saveStock() {
-  localStorage.setItem(stockKey, JSON.stringify(stock));
-}
-
 function ensureStockCoverage() {
   const defaults = buildDefaultStock();
   stock = { ...defaults, ...stock };
@@ -190,17 +116,6 @@ function ensureStockCoverage() {
     const number = Number(stock[key]);
     stock[key] = Number.isFinite(number) && number >= 0 ? number : defaults[key] ?? defaultStockMl;
   });
-
-  saveStock();
-}
-
-function slugify(value) {
-  return value
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
 }
 
 function getCocktailRequirements(cocktail) {
@@ -215,7 +130,7 @@ function getPossibleCocktailCount(cocktail) {
     return Math.floor(availableMl / neededMl);
   });
 
-  if (portions.length === 0) {
+  if (portions.length = 0) {
     return 0;
   }
 
@@ -311,7 +226,7 @@ function renderStock() {
           class="stock-qty"
           type="number"
           min="0"
-          step="10"
+          step="1"
           value="${stock[ingredient] ?? defaultStockMl}"
           data-ingredient-index="${index}" />
         <span class="unit">mL</span>
@@ -320,15 +235,15 @@ function renderStock() {
     .join("");
 
   stockContainer.querySelectorAll("input.stock-qty").forEach(input => {
-    input.addEventListener("input", e => {
+    input.addEventListener("change", async e => {
       const ingredientIndex = Number(e.target.dataset.ingredientIndex);
       const ingredient = ingredients[ingredientIndex];
       const value = Number(e.target.value);
-      stock[ingredient] = Number.isFinite(value) && value >= 0 ? value : 0;
-      saveStock();
-      renderCarte();
-      renderPhotos();
-      renderAdminCocktails();
+      const quantity = Number.isFinite(value) && value >= 0 ? value : 0;
+
+      await mutateAndSync(() => {
+        stock[ingredient] = quantity;
+      }, "Stock mis à jour ✅");
     });
   });
 }
@@ -458,49 +373,29 @@ function applySnapshot(data) {
   cocktails = data.cocktails;
   ingredientCatalog = deduplicateIngredients(data.ingredientCatalog);
   stock = data.stock;
-
-  saveCocktails();
-  saveIngredientCatalog();
   ensureStockCoverage();
   resetCocktailForm();
-  renderStock();
-  renderIngredientOptions();
-  renderCarte();
-  renderPhotos();
-  renderAdminCocktails();
-}
-
-function loadGithubSettings() {
-  const saved = localStorage.getItem(githubSettingsKey);
-  if (!saved) {
-    return { owner: "", repo: "", branch: "main", path: "docs/data.json" };
-  }
-
-  try {
-    const parsed = JSON.parse(saved);
-    return {
-      owner: parsed.owner ?? "",
-      repo: parsed.repo ?? "",
-      branch: parsed.branch ?? "main",
-      path: parsed.path ?? "docs/data.json"
-    };
-  } catch {
-    return { owner: "", repo: "", branch: "main", path: "docs/data.json" };
-  }
-}
-
-function saveGithubSettings(settings) {
-  localStorage.setItem(githubSettingsKey, JSON.stringify(settings));
+  renderAll();
 }
 
 function readGithubForm() {
   const owner = document.getElementById("ghOwner").value.trim();
   const repo = document.getElementById("ghRepo").value.trim();
   const branch = document.getElementById("ghBranch").value.trim() || "main";
-  const path = document.getElementById("ghPath").value.trim() || "docs/data.json";
+  const path = document.getElementById("ghPath").value.trim() || "data.json";
   const token = document.getElementById("ghToken").value.trim();
 
   return { owner, repo, branch, path, token };
+}
+
+function requireGithubConfig() {
+  const config = readGithubForm();
+  if (!config.owner || !config.repo || !config.path || !config.token) {
+    showAdminMessage("Renseigne owner/repo/path/token GitHub pour modifier les données.", true);
+    return null;
+  }
+
+  return config;
 }
 
 function encodeBase64Utf8(text) {
@@ -525,14 +420,10 @@ function getContentsApiPath(owner, repo, path) {
 }
 
 async function loadFromGithub() {
-  const { owner, repo, branch, path, token } = readGithubForm();
-
-  if (!owner || !repo || !path || !token) {
-    showAdminMessage("Owner, repo, path et token obligatoires.", true);
+  const { owner, repo, branch, path, token } = requireGithubConfig() ?? {};
+  if (!owner) {
     return;
   }
-
-  saveGithubSettings({ owner, repo, branch, path });
 
   const response = await fetch(`https://api.github.com${getContentsApiPath(owner, repo, path)}?ref=${encodeURIComponent(branch)}`, {
     headers: {
@@ -548,25 +439,20 @@ async function loadFromGithub() {
 
   const file = await response.json();
   const text = decodeBase64Utf8(file.content);
-  const data = JSON.parse(text);
-  applySnapshot(data);
+  applySnapshot(JSON.parse(text));
   showAdminMessage("Données chargées depuis GitHub ✅");
 }
 
-async function saveToGithub() {
-  const { owner, repo, branch, path, token } = readGithubForm();
-
-  if (!owner || !repo || !path || !token) {
-    showAdminMessage("Owner, repo, path et token obligatoires.", true);
-    return;
+async function saveToGithub(snapshot) {
+  const { owner, repo, branch, path, token } = requireGithubConfig() ?? {};
+  if (!owner) {
+    throw new Error("Configuration GitHub incomplète");
   }
-
-  saveGithubSettings({ owner, repo, branch, path });
 
   const apiPath = getContentsApiPath(owner, repo, path);
   let sha;
 
-  const currentResponse = await fetch(`https://api.github.com${apiPath}?ref=${encodeURIComponent(branch)}`, {
+  const getCurrent = await fetch(`https://api.github.com${apiPath}?ref=${encodeURIComponent(branch)}`, {
     headers: {
       Accept: "application/vnd.github+json",
       Authorization: `Bearer ${token}`,
@@ -574,16 +460,16 @@ async function saveToGithub() {
     }
   });
 
-  if (currentResponse.ok) {
-    const current = await currentResponse.json();
+  if (getCurrent.ok) {
+    const current = await getCurrent.json();
     sha = current.sha;
-  } else if (currentResponse.status !== 404) {
-    throw new Error(`GitHub ${currentResponse.status}`);
+  } else if (getCurrent.status !== 404) {
+    throw new Error(`GitHub ${getCurrent.status}`);
   }
 
   const body = {
     message: "Update cocktail data",
-    content: encodeBase64Utf8(JSON.stringify(getSnapshot(), null, 2)),
+    content: encodeBase64Utf8(JSON.stringify(snapshot, null, 2)),
     branch
   };
 
@@ -604,33 +490,70 @@ async function saveToGithub() {
   if (!saveResponse.ok) {
     throw new Error(`GitHub ${saveResponse.status}`);
   }
-
-  showAdminMessage("Données enregistrées sur GitHub ✅");
 }
 
-function initGithubForm() {
-  const settings = loadGithubSettings();
-  document.getElementById("ghOwner").value = settings.owner;
-  document.getElementById("ghRepo").value = settings.repo;
-  document.getElementById("ghBranch").value = settings.branch;
-  document.getElementById("ghPath").value = settings.path;
+function deepClone(data) {
+  return JSON.parse(JSON.stringify(data));
+}
+
+function renderAll() {
+  renderStock();
+  renderIngredientOptions();
+  renderCarte();
+  renderPhotos();
+  renderAdminCocktails();
+}
+
+async function mutateAndSync(mutation, successMessage) {
+  const config = requireGithubConfig();
+  if (!config) {
+    renderAll();
+    return;
+  }
+
+  const previous = deepClone(getSnapshot());
+
+  mutation();
+  ensureStockCoverage();
+  renderAll();
+
+  try {
+    await saveToGithub(getSnapshot());
+    showAdminMessage(successMessage);
+  } catch (error) {
+    applySnapshot(previous);
+    showAdminMessage(`Erreur GitHub: ${error.message}`, true);
+  }
+}
+
+async function initializeData() {
+  try {
+    const response = await fetch("data.json", { cache: "no-store" });
+    if (!response.ok) {
+      throw new Error("data.json introuvable");
+    }
+
+    const data = await response.json();
+    applySnapshot(data);
+  } catch {
+    ingredientCatalog = getAllIngredientsFromCocktails();
+    stock = buildDefaultStock();
+    ensureStockCoverage();
+    renderAll();
+  }
 }
 
 document.getElementById("btnCarte").addEventListener("click", () => showView("carte"));
 document.getElementById("btnPhotos").addEventListener("click", () => showView("photos"));
 document.getElementById("btnAdmin").addEventListener("click", () => showView("admin"));
 
-document.getElementById("resetStock").addEventListener("click", () => {
-  stock = buildDefaultStock();
-  saveStock();
-  renderStock();
-  renderCarte();
-  renderPhotos();
-  renderAdminCocktails();
-  showAdminMessage("Stock réinitialisé (1000 mL par ingrédient). ✅");
+document.getElementById("resetStock").addEventListener("click", async () => {
+  await mutateAndSync(() => {
+    stock = buildDefaultStock();
+  }, "Stock réinitialisé (1000 mL par ingrédient). ✅");
 });
 
-document.getElementById("addIngredientBtn").addEventListener("click", () => {
+document.getElementById("addIngredientBtn").addEventListener("click", async () => {
   const input = document.getElementById("newIngredientInput");
   const newIngredient = input.value.trim();
 
@@ -645,17 +568,15 @@ document.getElementById("addIngredientBtn").addEventListener("click", () => {
     return;
   }
 
-  ingredientCatalog = deduplicateIngredients([...ingredientCatalog, newIngredient]);
-  saveIngredientCatalog();
-  ensureStockCoverage();
+  await mutateAndSync(() => {
+    ingredientCatalog = deduplicateIngredients([...ingredientCatalog, newIngredient]);
+  }, "Ingrédient ajouté à la liste ✅");
+
   renderIngredientOptions([newIngredient], { [newIngredient]: defaultIngredientMl });
-  renderStock();
-  renderAdminCocktails();
   input.value = "";
-  showAdminMessage("Ingrédient ajouté à la liste ✅");
 });
 
-document.getElementById("adminCocktailList").addEventListener("click", e => {
+document.getElementById("adminCocktailList").addEventListener("click", async e => {
   const button = e.target.closest("button[data-action]");
   if (!button) {
     return;
@@ -682,20 +603,17 @@ document.getElementById("adminCocktailList").addEventListener("click", e => {
       return;
     }
 
-    cocktails = cocktails.filter(c => c.id !== cocktailId);
-    saveCocktails();
-    ensureStockCoverage();
-    renderStock();
-    renderIngredientOptions();
-    renderCarte();
-    renderPhotos();
-    renderAdminCocktails();
+    await mutateAndSync(() => {
+      cocktails = cocktails.filter(c => c.id !== cocktailId);
 
-    if (editingCocktailId === cocktailId) {
+      if (editingCocktailId === cocktailId) {
+        editingCocktailId = null;
+      }
+    }, "Recette supprimée ✅");
+
+    if (!editingCocktailId) {
       resetCocktailForm();
     }
-
-    showAdminMessage("Recette supprimée ✅");
   }
 });
 
@@ -704,7 +622,7 @@ document.getElementById("cancelEditBtn").addEventListener("click", () => {
   showAdminMessage("Modification annulée.");
 });
 
-document.getElementById("addCocktailForm").addEventListener("submit", e => {
+document.getElementById("addCocktailForm").addEventListener("submit", async e => {
   e.preventDefault();
 
   const nom = document.getElementById("cocktailName").value.trim();
@@ -719,42 +637,37 @@ document.getElementById("addCocktailForm").addEventListener("submit", e => {
 
   const isEditMode = Boolean(editingCocktailId);
 
-  if (isEditMode) {
-    cocktails = cocktails.map(cocktail => {
-      if (cocktail.id !== editingCocktailId) {
-        return cocktail;
-      }
+  await mutateAndSync(() => {
+    if (isEditMode) {
+      cocktails = cocktails.map(cocktail => {
+        if (cocktail.id !== editingCocktailId) {
+          return cocktail;
+        }
 
-      return {
-        ...cocktail,
+        return {
+          ...cocktail,
+          nom,
+          ingredients,
+          ingredientQuantities,
+          avisChloe: avisChloeInput || "Nouveau cocktail à tester.",
+          photoUrl: photoUrlInput || fallbackPhotoUrl
+        };
+      });
+    } else {
+      cocktails.push({
+        id: `${slugify(nom)}-${Date.now().toString(36)}`,
         nom,
         ingredients,
         ingredientQuantities,
         avisChloe: avisChloeInput || "Nouveau cocktail à tester.",
         photoUrl: photoUrlInput || fallbackPhotoUrl
-      };
-    });
-  } else {
-    cocktails.push({
-      id: `${slugify(nom)}-${Date.now().toString(36)}`,
-      nom,
-      ingredients,
-      ingredientQuantities,
-      avisChloe: avisChloeInput || "Nouveau cocktail à tester.",
-      photoUrl: photoUrlInput || fallbackPhotoUrl
-    });
-  }
+      });
+    }
 
-  ingredientCatalog = deduplicateIngredients([...ingredientCatalog, ...ingredients]);
-  saveCocktails();
-  saveIngredientCatalog();
-  ensureStockCoverage();
-  renderStock();
+    ingredientCatalog = deduplicateIngredients([...ingredientCatalog, ...ingredients]);
+  }, isEditMode ? "Recette modifiée ✅" : "Cocktail ajouté ✅");
+
   resetCocktailForm();
-  renderCarte();
-  renderPhotos();
-  renderAdminCocktails();
-  showAdminMessage(isEditMode ? "Recette modifiée ✅" : "Cocktail ajouté ✅");
 });
 
 document.getElementById("loadFromGithubBtn").addEventListener("click", async () => {
@@ -765,18 +678,4 @@ document.getElementById("loadFromGithubBtn").addEventListener("click", async () 
   }
 });
 
-document.getElementById("saveToGithubBtn").addEventListener("click", async () => {
-  try {
-    await saveToGithub();
-  } catch (error) {
-    showAdminMessage(`Erreur enregistrement GitHub: ${error.message}`, true);
-  }
-});
-
-ensureStockCoverage();
-initGithubForm();
-renderStock();
-renderIngredientOptions();
-renderCarte();
-renderPhotos();
-renderAdminCocktails();
+initializeData();

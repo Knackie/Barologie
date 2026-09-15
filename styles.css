@@ -261,3 +261,9 @@ button.danger {
   border-color: #fecaca;
   color: #991b1b;
 }
+
+.sync-note {
+  margin: .2rem 0 0;
+  color: var(--muted);
+  font-size: .9rem;
+}
