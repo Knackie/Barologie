@@ -3,7 +3,11 @@
     {
       "id": "spritz-pomme",
       "nom": "Spritz Pomme",
-      "ingredients": ["Prosecco", "Eau pétillante", "Jus de pomme"],
+      "ingredients": [
+        "Prosecco",
+        "Eau pétillante",
+        "Jus de pomme"
+      ],
       "ingredientQuantities": {
         "Prosecco": 120,
         "Eau pétillante": 60,
@@ -15,7 +19,11 @@
     {
       "id": "mule",
       "nom": "Moscow Mule",
-      "ingredients": ["Vodka", "Ginger beer", "Citron vert"],
+      "ingredients": [
+        "Vodka",
+        "Ginger beer",
+        "Citron vert"
+      ],
       "ingredientQuantities": {
         "Vodka": 60,
         "Ginger beer": 120,
@@ -27,7 +35,11 @@
     {
       "id": "virgin-sunset",
       "nom": "Virgin Sunset",
-      "ingredients": ["Jus d'orange", "Sirop de grenadine", "Jus de pomme"],
+      "ingredients": [
+        "Jus d'orange",
+        "Sirop de grenadine",
+        "Jus de pomme"
+      ],
       "ingredientQuantities": {
         "Jus d'orange": 120,
         "Sirop de grenadine": 20,
@@ -39,7 +51,12 @@
     {
       "id": "mojito",
       "nom": "Mojito",
-      "ingredients": ["Rhum", "Menthe", "Citron vert", "Eau pétillante"],
+      "ingredients": [
+        "Rhum",
+        "Menthe",
+        "Citron vert",
+        "Eau pétillante"
+      ],
       "ingredientQuantities": {
         "Rhum": 50,
         "Menthe": 10,
@@ -60,11 +77,13 @@
     "Prosecco",
     "Rhum",
     "Sirop de grenadine",
-    "Vodka"
+    "Vodka",
+    "Gin"
   ],
   "stock": {
     "Citron vert": 1000,
     "Eau pétillante": 1000,
+    "Gin": 1000,
     "Ginger beer": 1000,
     "Jus d'orange": 1000,
     "Jus de pomme": 1000,
