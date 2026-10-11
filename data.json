@@ -65,6 +65,18 @@
       },
       "avisChloe": "Un classique qui marche toujours.",
       "photoUrl": "https://images.unsplash.com/photo-1551538827-9c037cb4f32a?auto=format&fit=crop&w=900&q=80"
+    },
+    {
+      "id": "fleur-de-pommes-mv47kpe8",
+      "nom": "Fleur de pommes",
+      "ingredients": [
+        "Sirop de fleur de Sureau"
+      ],
+      "ingredientQuantities": {
+        "Sirop de fleur de Sureau": 50
+      },
+      "avisChloe": "Nouveau cocktail à tester.",
+      "photoUrl": "https://images.unsplash.com/photo-1470337458703-46ad1756a187?auto=format&fit=crop&w=900&q=80"
     }
   ],
   "ingredientCatalog": [
@@ -91,6 +103,7 @@
     "Menthe": 1000,
     "Prosecco": 1000,
     "Rhum": 1000,
+    "Sirop de fleur de Sureau": 1000,
     "Sirop de grenadine": 1000,
     "Vodka": 1000
   }
